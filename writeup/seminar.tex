@@ -1,0 +1,60 @@
+\documentclass{llncs}
+
+\usepackage{a4}
+\usepackage[english]{babel}
+\usepackage{lmodern}
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{subfigure}
+% Graphics stuff
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{matrix,decorations.pathreplacing,trees}
+
+% Just for me, to remember things
+%\newcommand{\todo}[1]{ {\color{red}{\textbf{#1}}}}
+
+% Title and author
+\title{Extension of Two-Party Computation to Multi-party Computation}
+\subtitle{Principles and Applications of Secure Multi-Party Computation}
+\author{Philipp Müller}
+\institute{%
+   Fakultät für Informatik, \\
+   Technische Universität München \\
+   \email{muellerp@in.tum.de}
+}
+
+% Some adjustments
+\pagestyle{plain}
+\DeclareMathOperator{\lsb}{lsb}
+
+%------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We explain how $n$ parties can evaluate a function $f(x_1,\dots,x_n)$ such that each party privately holds one input parameter to the function. The function is evaluated in a manner that ensures that the privacy of each parties input is preserved and only a constant number of rounds is needed.
+\end{abstract}
+
+\input{intro}
+
+\input{prerequisites}
+
+\input{protocolidea}
+
+\input{protocolformal}
+
+\input{outcome}
+
+\appendix{}
+
+\input{appendix}
+
+\bibliographystyle{splncs}
+\bibliography{literature.bib}
+
+\end{document}
