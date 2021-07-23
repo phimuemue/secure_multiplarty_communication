@@ -1,0 +1,243 @@
+\section{A (more) formal depiction of the protocol}
+\label{sec:formal-description}
+
+We saw in section \ref{sec:concrete-idea} how we can transform any function (represented as a circuit) into a garbled circuit that can be used later to evaluate the function given certain inputs. We will now give a formal summary that explains how to construct a garbled circuit and how to evaluate it locally. This steps are in principle taken from \cite{Rogaway:1991:RCS:888502}, with some explanations added. 
+
+The protocol itself has two main steps. First, the participants \emph{collaboratively} construct the garbled circuit needed for our function. In the second step, the participants \emph{locally} do the (expensive) evaluation of the garbled circuit. But before we start with the actual construction, we have to ensure that the circuit we are starting with has a certain format. We will now discuss all these aspects in more detail.
+
+\subsection{Bringing the original circuit into a suitable format}
+\label{sec:original-circuit-suitable-format}
+
+We already mentioned in section \ref{sec:general-idea} that we can assume the circuit is in a suitable format. We briefly recapitulate what the circuit should look like: It should have no ``cycles'', only gates with a fan-in/fan-out combination of $2/1$ or $1/2$. It is a well known fact that each circuit can be represented using only such gates without increasing the circuit's size too much (i.e. the size stays polynomial).
+
+\subsubsection{Introducing ``splitters''.}
+\label{sec:introducing-splitters}
+
+As we will discuss later (and as it was shown roughly ten years after the protocols initial publication by \cite{Tate03ongarbled}), we have to require the following for our circuit: No wire is used more than once as an input wire. This is necessary, because otherwise some gates may be related in a way that might reveal something about the semantics of a wire, wihch is what we wanted to prevent. For a short explanation why this is necessary, see section \ref{sec:appendix-splitters} or have a look at \cite{Tate03ongarbled}.
+
+To be able to ensure this, we need so-called \emph{splitter} gates that take one signal as input and have two outgoing wires. The incoming signal is then just forwarded to each of the outgoing wires. While this might seem just to be a complication of matters, we will later inspect why this is necessary.
+
+That is, whenever one input wire is used as input to more than one gate, we use splitters to split up the signal onto several distinct wires. Again, note that this doesn't increase the size of the circuit more than by a polynomial factor.
+
+Keep in mind that our circuit $C$ has now two kinds of gates: Gates taking two inputs and returning one output (the ``ordinary gates''), and gates taking one input and returning two outputs (the splitters we had to introduce).
+
+\subsection{Constructing the garbled circuit}
+\label{sec:protocol-construct-garbled-circuit}
+
+In order to understand how the protocol works, let us first consider the inputs to our problem:
+
+\begin{description}
+\item[Common input.] The common input can be seen as a string:
+
+  \begin{equation*}
+    c=1^{k'}\#1^n\#1^\ell\#1^l
+    % \#m % only complicates things
+    \#C
+  \end{equation*}
+
+This string is basically just used so that all participants know ``what's going on''. The parameter $k'$ defines a lower bound for the security parameter (see below how we obtain the actual security parameter $k$ from $k'$), while $n$ is the number of participants, $\ell$ stands for the length of one party's input\footnote{We assume all inputs from the parties to be of equal length.} and $l$ is the length of the output value.
+
+That is, we -- formally -- consider a function $f:(\Sigma^\ell)^n\rightarrow \Sigma^l$ accepting $n$ inputs of length $\ell$ and returning one value of length $l$. We could assume simpler sets here, but we chose to use these to be consistent with \cite{Rogaway:1991:RCS:888502}. $C$ is a suitable circuit-representation of the function $f$. 
+
+
+\item[Private inputs.] Each participating party $i$ has a private input $x_i\in\Sigma ^\ell$ that shall not become known to other participants.
+\end{description}
+
+\subsubsection{Computing gate labels and semantics.}
+\label{sec:gate-labels-and-semantics-formal-def}
+
+Let us in the following assume that $C$ has $\Gamma$ gates (numbered $1,2,\dots,\Gamma$) and $W$ wires (numbered $1,2,\dots,W$, including input, internal and output wires). The input wires are the wires $1,2,\dots,n\ell$, output wires are assigned the numbers $W-l+1,W-l+2,\dots W$.
+
+What we will now do is computing the garbled circuit. That is, we will collaboratively compute gate labels for each gate and we will compute the semantics for each wire. Remember that it is crucial to keep the semantics secret so no participant can conclude the ``real values'' along the wires, but just sees the signals. Moreover, we will later just ``publish'' the correct signals for the input wires and the gate labels. We will compute these values collaboratively and randomly.
+
+We remember that we needed four gate labels for each gate\footnote{A ``normal gate'' needs four gate labels, because it has exactly two input wires that can carry even or odd signals each. 
+
+A splitter gate needs four labels as well, since it has one input and two outputs. Thus, the input signal can be even or odd, and we need these two possibilities for each of the two outgoing wires.}. Moreover, we said that each player shall contribute $k$ bits to each signal. Be careful here: Each player has to generate $k$ bits for every wire \emph{for the even and for the odd signal}. Additionally, we stated that we wanted all players to contribute one bit to the semantics $\lambda^\omega$ for some wire $\omega$. That means, each player $i$ has to generate a random bit string $r_i\in\Sigma^{2kW+W-l}$ ($W$ is the number of wires in total).
+
+The strings $r_i$ will later be interpreted in the following way:
+
+\begin{equation}
+  \label{eq:interpretation-random-string-of-a-player}
+  r_i=s_{0,i}^1,s_{1,i}^1,\dots,s_{0,i}^W,s_{1,i}^W,\  \lambda_i^1,\dots,\lambda_i^{W-l}
+\end{equation}
+
+Each string $s^\omega_{p,i}$ is then a random bit string of length $k$ generated by player $i$ that ``participates'' in the parity-$p$-signal for wire $\omega$ (and thus, implicitly in the gate labels). The value $\lambda_i^\omega$ is some bit that will later ``participate'' in the \emph{semantics}\footnote{Remember that we stated that if $\lambda^\omega=0$ then the even signal is associated with semantics $\mathbf{0}$ and the odd signal is associated with semantics $\mathbf{1}$. If $\lambda^\omega=1$, it is just the other way around.} of wire $\omega$. See below how this is to be understood. Note that we do only need $\lambda_i^1,\dots,\lambda_i^{W-l}$ since we wanted the semantics of the $l$ output wires to be public.
+
+Now, let the actual security parameter $k=\max(k',\sqrt[10]{|c|})$. This is a technical detail that is necessary due to our definition of adversaries. These adversaries are allowed to use polynomial time in $|c|$, and not in $k$. For more information please consult \cite{Rogaway:1991:RCS:888502}.
+
+\hyphenation{information-theo-retically}
+
+Now, the parties compute gate labels and (garbled) input signals with security parameter $k$ -- tolerating the presence of at most $\lfloor \left( n-1 \right) / 2\rfloor$ adversaries (speak: they ``information-theoretically $\lfloor (n-1)/2 \rfloor$-securely'' compute all this) using the following technique\footnote{To be more precise, this technique relies on the fact that the underlying ``sub-protocols'' used to perform it enable us to information-theoretically $\lfloor (n-1)/2 \rfloor$-securely compute gate labels and garbled input signals.}:
+
+\paragraph{Private inputs.}
+
+The private inputs $x_1,\dots,x_n$ define the bits $b^1,\dots,b^{n\ell}$ associated with each input wire according to $b^1\dots b^{n\ell}=x_1\dots x_n$. Each $x_i$ supplies $l$ bits (namely $b^{(i-1)\ell+1}$ to $b^{i\ell}$).
+
+\paragraph{Defining the signals.}
+
+We now define for each wire $\omega\in\left\{ 0,\dots,W \right\}$ and for each parity $b\in\left\{ 0,1 \right\}$ the signals:
+
+\begin{equation}
+  \label{eq:definition-of-signals}
+  s_b^\omega:=s_{b,1}^\omega\dots s_{b,n}^\omega b
+\end{equation}
+
+This means that for $b=0$, we have the even signals, while $b=1$ gives an odd signal. Note that only the input signals (representing the correct semantics) can later be revealed to the public safely. But remember: we won't publish the semantics!
+
+\paragraph{The semantics of the wires.}
+
+We come now to a central part of this construction: We define the semantics of each wire $\omega$.
+
+\begin{equation}
+  \label{eq:definition-of-semantics-formal}
+  \lambda^\omega= 
+  \begin{cases}
+    \lambda_{1}^\omega\oplus\dots\oplus\lambda_{n}^\omega & \text{ for } 1\leq\omega\leq W-l \\
+    0 & \text{ for } W-l+1\leq\omega\leq W.
+  \end{cases}
+\end{equation}
+
+Please note that equation (\ref{eq:definition-of-semantics-formal}) contains just a \emph{definition}. It is important that neither $\lambda^\omega$ nor $\lambda_i^\omega$ become public. We define a notational shortcut: We say that $\lambda^\omega$ is the semantics of signal $s_0^\omega$, while $\overline{\lambda^\omega}:=1-\lambda^\omega$ is the semantics of signal $s_1^\omega$.
+
+\paragraph{Signals along input wires.}
+
+For each input wire $\omega$ of the circuit (i.e. for each $\omega \in \left\{ 1,2,\dots,n\ell\right\})$, the string $\sigma^\omega$ is given by
+  \begin{equation}
+    \label{eq:sigma-superscript-omega-definition}
+    \sigma^\omega=s_{(b^\omega\oplus\lambda^\omega)}^\omega.
+  \end{equation}
+
+To research what $\sigma^\omega$ means, we assume we have an input wire (in the sense that it is an input wire to the whole circuit) $\omega\in\left\{ 1,2,\dots,n\ell \right\}$ that has semantics $\lambda^\omega$. Then, the subscript $(b^\omega\oplus\lambda^\omega)$ denotes the parity that is needed for this particular input wire to correctly represent the semantics of the player's input. If we then take $s_{(b^\omega\oplus\lambda^\omega)}^\omega$, we can be sure that we are issuing the correct input signal (one can simply test this with sample values for $b^\omega$ and $\lambda^\omega$).
+
+Note that even if the original input signal comes from one single player, the computation of $s_{(b^\omega\oplus\lambda^\omega)}^\omega$ has to be done collaboratively, since it involves $\lambda^\omega$ (the semantics for wire $\omega$) that shall not become public and since signals are composed of bits supplied by all players. However, that collaborative computation is no problem, since we already saw that we can compute the value:
+
+\begin{equation}
+\label{eq:computing-input-signals}
+(b^\omega\oplus\lambda^\omega)\stackrel{~(\ref{eq:definition-of-semantics-formal})}{=}(b^\omega\oplus\lambda_{1}^\omega\oplus\dots\oplus\lambda_{n}^\omega)
+\end{equation}
+is, as we see, essentially just a XOR of bits whose associated circuit can be secretly and securely evaluated in a constant number of rounds and with polynomial communication.
+
+In this way, all players learn the value $\sigma^\omega$ without learning the value $b^\omega$ (which shall stay private to the player holding it). The players then only compute the signal associated with the obtained parity. This way, only this signal is learnt by all players.
+
+\paragraph{Constructing the gate labels.}
+
+It remains to explain how we can -- given the input signal(s)\footnote{Again without knowing the input \emph{semantics}.} to a gate $g$ -- later be able to compute the output of this certain gate. Therefore, we define the gate labels (as explained in section \ref{sec:signals-semantics-by-example}). 
+
+We assume now that $\alpha, \beta$ denote input wires carrying signals $\sigma^\alpha_a$ and $\sigma^\beta_b$, respectively. The incoming signal(s) have the following format\footnote{Depending on the type of the gate, we have either two inputs (for ordinary gates) or only one input (for splitters).}:
+
+\begin{equation*}
+  \sigma^\alpha_a=s_{a1}^\alpha\dots s_{an}^\alpha a  \quad \text{ and }\quad \sigma^\beta_b=s_{b1}^\beta\dots s_{bn}^\beta b
+\end{equation*}
+
+This means: On wire $\alpha$, there's the signal with parity $a$ for that specific wire, consisting of the $n$ sub-strings $s_{ai}^\alpha$ of length $k$ each, and with the parity bit $a$. We have the corresponding parts for $\sigma_b^\beta$.
+
+Remember: We have two kinds of gates in our circuit: The ``ordinary gates'' taking two inputs and returning one output and the ``splitters'' taking one input and having two output wires.
+
+\begin{description}
+\item[``Ordinary gates''.] We will start with the ``ordinary gates''. These gates get two input signals and return one output signal. For each ordinary gate $g$ in the circuit (i.e. $g$ is some number in $\left\{ 1,2,\dots;\Gamma \right\}$), we define the gate labels $A^g_{00}, A^g_{01}, A^g_{10}, A^g_{11}$ as follows: If gate $g$ computes a binary function we denote by the symbol $\otimes$, and has left wire $\alpha$, right wire $\beta$, and output wire $\gamma$ (i.e. $\alpha,\beta,\gamma\in[1\dots W]$), then we define for $a,b\in\{0,1\}$ the gate label $A_{ab}^g$ by
+  \begin{eqnarray}
+    \label{eqn:gate-labels-definition}
+    A_{ab}^g &= & G_b(s_{a1}^\alpha)\oplus\dots\oplus G_b(s_{an}^\alpha) 
+              \ \oplus \ 
+              G_a(s_{b1}^\beta)\oplus\dots\oplus G_a(s_{bn}^\beta)
+              \ \oplus \ \\ \nonumber
+             & & s_{[(\lambda^\alpha\oplus a)\otimes(\lambda^\beta\oplus b)]\oplus\lambda^\gamma}^\gamma
+  \end{eqnarray}
+\item[Splitter gates.] We will now do the analogous thing for splitter gates (for reference, see \cite{Xu:2004:MAS:1023552}). Even if we didn't specify these gates in section \ref{sec:how-can-signals-propagate}, the underlying thoughts are the same. Remember that a splitter just forwards its input signal onto the two outgoing wires. We call the single input wire $\alpha$ and denote the output wires by $\gamma_0$ and $\gamma_1$. Then, the gate labels are as follows (for $a,b\in\left\{ 0,1 \right\}$):
+  \begin{eqnarray*}
+    A_{ab}^g & = & G_b(s^\alpha_{a1}) \oplus \dots \oplus G_b(s^\alpha_{an}) \oplus s^{\gamma_b}_{(\lambda^\alpha\oplus a)\oplus\lambda^{\gamma_b}}
+  \end{eqnarray*}
+\end{description}
+
+As said before, $G_0$ and $G_1$ denote the ``zeroth'' and the ``first'' halves of the output of a pseudorandom generator $G$. This pseudorandom generator takes a binary string of length $k$ ($k$ being the security parameter) and stretches it into a longer string. The length of this longer string has to be fixed a priori, which is why we assume that the generator returns a binary string of length $2(\overline{n}k+1)+1$, with e.g. $\overline{n}=k^{10}$. The term $\overline{n}$ bounds the number of players that can participate in the protocol depending on the security parameter. Thus, $\overline{n}=k^{10}$ shouldn't be a terribly restrictive constraint, but can be increased at will (at least as long as it is a fixed power of $k$). For the reason we define $A^g_{ab}$ exactly like that, please refer to section \ref{sec:how-can-signals-propagate}. For an intuition about why we need the pseudorandom generators, please refer to, e.g., section \ref{sec:appendix-why-pseudorandom-generators}.
+
+\paragraph{Outcome of the first phase of the protocol.}
+
+We have computed two important things collaboratively: The whole garbled circuit (consisting of gate labels and associated wires) and the input signals ($\sigma^\omega$ for $\omega\in\left\{ 1,2,\dots,n\ell \right\}$).
+
+The semantics ($\lambda^\omega$ for $\omega\in\left\{ 1,2,\dots,W-l+1 \right\}$) are \emph{not known} to the participants. It is crucial that this is the case, as otherwise the players could deduce e.g. the input values and internal values of wires. It is all the more surprising that we can evaluate the function correctly, even if we don't know the internal wires values.
+
+What we've done now is the following: The parties collaboratively computed the garbled circuit (with security parameter $k$, and $\lfloor (n-1)/2 \rfloor$-securely). Note that we didn't exactly specify how e.g. the several XOR-operations are computed collaboratively, but we just said that \emph{we are using} some techniques that enables us to do so. We saw in section \ref{sec:building-blocks-for-the-protocol} that such a protocol for XOR exists.
+
+In this way, we can rely upon the existing protocols that serve as building blocks for our protocol. Moreover, this takes the burden of some proofs from us: We just know that there exist some protocols that we can use as building blocks for our protocol, and if these building blocks have specific properties, they automatically apply for our protocol. 
+
+In particular, we saw that every step described could be evaluated in a constant number of rounds and with polynomial overhead. Since the first phase has no loops or recursions, the overall complexity is still within a constant number of rounds and polynomial amount of communication.
+
+It remains now for the single parties to evaluate the obtained garbled circuit. This is done in the second phase.
+
+\subsection{Locally evaluating the garbled circuit}
+\label{sec:protocoll-locally-evaluating-garbled-circuit}
+
+We saw in the previous section how to construct the garbled circuit and will now examine how to evaluate the garbled circuit we obtained by the above routine.
+
+As before, take a first look at the inputs:
+
+\begin{description}
+\item[Common input] As before, we have a common string $c=1^{k'}\#1^n\#1^\ell\#1^l
+%\#m
+\#C$. For the meanings of all the symbols, please consult section \ref{sec:protocol-construct-garbled-circuit}.
+\item[Input] Now we have a garbled program $\hat y$, i.e. we have gate labels $A^g_{00}, A^g_{01}, A^g_{10}, A^g_{11}$ (each coming from the set $\Sigma^{nk+1}$ and input signals $\sigma^\omega\in\Sigma^{nk+1}$ (for $g\in[1\dots\Gamma]$ and $\omega\in[1\dots nl]$).
+\end{description}
+
+We want to compute the string $y\in\Sigma^l$ that this garbled program evaluates to. As in the previous step, we set $k=max(k',\sqrt[10]{|c|})$. It is necessary for a player $i$ to know the value $k$, so that the player knows how to dissect a signal into $n$ binary strings of length $k$.
+
+The following is carried out by each player $i$ (since we want to evaluate locally). That is, each player has to ``start at the input wires'' (using the values $\sigma^1$ to $\sigma^{n\ell}$) and work his way up to the output wires to evaluate the function.
+
+We are now going to see how we can obtain the signals for the outgoing wires of the gates. Therefore, we again distinguish between ``ordinary'' and splitter gates:
+
+\begin{description}
+\item[``Ordinary gates''.] We consider how to evaluate an ordinary gate $g$ with left input wire $\alpha$, right input wire $\beta$ and output wire $\gamma$ (i.e. $\alpha,\beta,\gamma\in[1\dots W]$) given its input signals.
+
+Let $\sigma^\alpha=\sigma_1^\alpha\dots\sigma_n^\alpha a$ be the signal for wire $\alpha$, and $\sigma^\beta=\sigma_1^\beta\dots\sigma_n^\beta b$ for wire $\beta$. Then, we want to compute the resulting signal $\sigma^\gamma$ for wire $\gamma$. Therefore we use the appropriate gate labels:
+
+\begin{equation}
+  \label{eq:player-i-holds-signal-definition}
+  \sigma^\gamma=G_b(\sigma_1^{\alpha})\oplus\dots\oplus G_b(\sigma_n^{\alpha})
+               \ \oplus \
+               G_a(\sigma_1^{\beta})\oplus\dots\oplus G_a(\sigma_n^{\beta})
+               \ \oplus\ 
+               A_{ab}^g
+\end{equation}
+
+\item[Splitter gates.] Similarly, we compute the outgoing signal from a splitter gate. As we said, in splitter gates we only have one incoming signal, namely $\sigma^\alpha=\sigma_1^\alpha\dots\sigma_n^\alpha a$, and we have two outgoing wires $\gamma_0$ and $\gamma_1$ which we want to compute the signals for. That is, for $i\in\left\{ 0,1 \right\}$ we compute (according to \cite{Xu:2004:MAS:1023552})
+  \begin{equation}
+    \label{eq:splitter-gates-computation-of-output-values}
+    \sigma^{\gamma_i}=G_i(\sigma_1^\alpha)\oplus\dots\oplus G_i(\sigma_n^\alpha) \ \oplus A_{ai}^g
+  \end{equation}
+\end{description}
+
+Please note that equation (\ref{eq:player-i-holds-signal-definition}) resembles equation (\ref{eq:definition-of-output-of-a-gate-dependent-of-gate-label}), which was the starting point of our thoughts when it came to how we would like to construct the gate labels. Equation (\ref{eq:splitter-gates-computation-of-output-values}) was derived in an analogue way.
+
+So, now we have seen how we compute the output of a certain gate. Thus, we can now ``propagate up the circuit'' and will reach the output wires. As soon as a player has computed a signal for each wire, she's basically done and can read the function output $y$:
+
+\begin{equation}
+  \label{eq:protocoll-each-player-ouputs}
+  y=\lsb(\sigma^{W-l+1})\dots\lsb(\sigma^W)
+\end{equation}
+
+In equation (\ref{eq:protocoll-each-player-ouputs}), $\lsb$ denotes the least significant (in our case the last) bit. We can be sure that $\lsb(\sigma^{W-l+1})\dots\lsb(\sigma^W)$ is directly the output of the function, because we explicitly stated that the output wires ($W-l+1$ to $W$) have semantics that are publicly known (namely $\lambda^{W-l+1}=\dots=\lambda^W=0$).
+
+\subsection{Review of the steps}
+\label{sec:review-of-the-protocol}
+
+\subsubsection{Ensure that the circuit has a certain format.}
+\label{sec:ensure-that-circuit-has-a-certain-format}
+
+Let us briefly recapitulate what we have done. We first ensured that the circuit representing the desired function has a certain format (no cycles, only two-in-one-out- and one-in-two-out-gates, no wire used as input in more than one gate). It should be clear that transforming any circuit into a circuit satisfying these constraints can be done in polynomial time and moreover requires no communication between the players at all.
+
+\subsubsection{Collaboratively computing the garbled circuit.}
+\label{sec:review-computing-garbled-circuit}
+
+When the players computed the garbled circuit, we said that each player generates a random string of length $2kW+W-l$ (where $k$ is the security parameter, $W$ the number of wires). The obtained random bits are then used to define the semantics and signals for each wire. Note that the size of the gate labels and the signals is polynomial (in the size of the circuit and the security parameter). Moreover, when the signals and gate labels are computed, only a polynomial amount of information is needed to perform these computations.
+
+Thus, because the players only need to communicate that amount of information, we have a polynomial amount of communication.
+
+\subsubsection{Evaluating the circuit locally.}
+\label{sec:review-eveluating-circuit}
+
+Each player obtains now the garbled circuit and the garbled inputs. According to the presented rules, each player locally evaluates the circuit and finally obtains the desired result. This last step requires no communication at all, it can be done by each player individually.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "seminar"
+%%% End: 

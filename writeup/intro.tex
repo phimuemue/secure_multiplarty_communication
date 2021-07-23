@@ -1,0 +1,65 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Collaborative secure function evaluation has surprisingly many applications in practice. Whenever several participants want to compute some value from their respective inputs and privacy is a concern, we might need a technique that allows us to evaluate the proper function in a way that preserves privacy of the inputs. 
+
+\subsection{Two motivational problems}
+\label{sec:motivational-problems}
+
+We will now see two examples of what such problems might look like.
+
+\subsubsection{Secure auctioning}
+\label{sec:intro-problem-secure-auctioning}
+
+Imagine the following scenario: Two people ($A$ and $B$) want to buy some good $C$. Of course, the better offer will win, so both $A$ and $B$ are interested in who had the higher bid. However, $A$ and $B$ don't want each other to know the bids, i.e. $A$ wants to keep its bid secret from $B$ and vice versa. 
+
+We can model this problem as a function
+
+\begin{equation}
+  f(a,b)=
+  \begin{cases}
+    -1, & \text{ if } a>b \\
+    0, & \text{ if } a=b \\
+    1, & \text{ if } a<b
+  \end{cases}.
+\end{equation}
+
+Staying within this context, we want to know the function value $f(a,b)$, where $a$ and $b$ denote the bids of $A$ and $B$, respectively, but $A$ and $B$ don't want $a$ and $b$ to become publicly known.
+
+Of course, we might not only be interested in a function $f:\mathbb R ^2\rightarrow \left\{ -1,0,1 \right\}$, but in a function $g: \mathbb R ^n \rightarrow \left\{ 1,2,\dots,n \right\}$ that can be used if not only two, but $n$ people ($A_1,\dots,A_n$) are interested in some good $C$. The output of function $g$ then denotes which person's offer was the best.
+
+\subsubsection{Office assignment problem}
+\label{sec:office-assignment-intro-problem}
+
+This problem is taken from \cite{Rogaway:1991:RCS:888502}. Imagine $2n$ people that must be distributed onto $n$ offices, i.e. one office is shared by two people. Each person $i$ writes a list with values $^iL^j\in [0,1]$ (for $j=1:n$). The value $^iL^j$ denotes how much person $i$ likes person $j$. The higher the value the better.
+
+Of course, they want to be distributed in such a way that their preferences are respected to a certain degree. They agree that for a room assignment $M$ the value
+\begin{equation*}
+\sum_{\left\{i,j \right\}\in M}\min(^iL^j, ^jL^i)
+\end{equation*}
+is a good measure for the goodness of the assignment $M$. So, the goal will be to maximize this measure, but -- of course -- no student wants to reveal his preferences (i.e. all the values $^iL^j$ shall stay private to person $i$).
+
+\subsection{Common ingredients of these two problems}
+\label{sec:introductory-common-ingredients}
+
+The above two functions are both derived from the desire to compute some value from inputs that were contributed by different parties. Moreover, we -- in particular -- should look out that these inputs shall not become public.
+
+Each participant wants to know the output, but does not want his input to the function to become public. Along the same lines, no participant shall gather information about the other participant's inputs.
+
+At this point it is worth noting that even the function value itself \emph{might} reveal some information about the inputs. For example, consider $mult(a,b)=a\cdot b$: If $mult(a,b)=0$, one can conclude that one of the arguments must have been zero. Such conclusions -- obviously -- cannot be avoided since we are interested in the actual output of the function, that in this case might reveal information about the inputs. However, we want to keep ``as much as possible'' secret. To define what this means precisely is a crucial point that will be addressed later.
+
+This kind of problem can be solved using \emph{secure multi-party function evaluation}. Of course one might tailor a specific scheme for each function. However, it is conceivably to derive one technique that allows for arbitrary functions.
+
+\subsection{What we will construct}
+\label{sec:our-goal}
+
+We will construct a framework that enables some participants (also called \emph{players} or \emph{parties}) to collaboratively evaluate a function such that each participant supplies one input to the function. Moreover, we will address the problem that the inputs shall not be revealed to the community.
+
+Such a protocol for secure function evaluation usually evolves in \emph{rounds}. In each round, the participants can communicate with each other. Between the rounds, they can carry out local computations.
+
+One might be tempted to guess that ``more complicated'' functions take more time to be collaboratively evaluated. However, as we will see, this is not the case. The protocol we describe takes a constant number of rounds (independent of the function) and keeps the amount of communication between the single participants polynomially bounded.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "seminar"
+%%% End: 

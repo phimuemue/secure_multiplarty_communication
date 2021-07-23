@@ -1,0 +1,251 @@
+\section{Formal definitions for Secure Computation}
+\label{sec:formal-definition}
+
+We said that we want to compute functions in a way such that the inputs stay private to the respective players. We call that $secure$. While this colloquial explanation is quite intuitive, we will briefly examine what it means formally. The following definitions are along the lines of those given in \cite{Rogaway:1991:RCS:888502} and \cite{Beaver1990}.
+
+\subsection{Prerequisites}
+\label{sec:prerequisites}
+
+\paragraph{A word on the security parameter.}
+
+A central value when considering cryptographic schemes or protocols is the so called \emph{security parameter}, often denoted by $k$. In short, this is a constant that is fixed before setting up some cryptographic algorithm or protocol\footnote{That is, you pick some security parameter, and afterwards the cryptosystem is set up according to this parameter.}. The run times of encryption/decryption or the running times needed by some adversary are then typically measured as a function in $k$.
+
+Informally stated, typically the following is the case: As soon as $k$ is greater than some particular value, the system constructed (according to this parameter) is considered secure (see \cite{lecture-notes-goldwasser-bellare}).
+
+\begin{definition}[Negligibility]
+  A function $\epsilon:\mathbb{N}\rightarrow\mathbb{R}$ is \emph{negligible} if $\epsilon(k)\in k^{-\omega(1)}$.
+\end{definition}
+
+To bring the notion of negligibility in a format that is (due to Landau-Notation) possibly more well-known to most computer scientists, we can say, that a function $\epsilon(k)$ is negligible, if for every positive integer $c$ there exists some $k_0$ such that for all $k>k_0$ we have $|\epsilon(k)|<k^{-c}$ (so: $\epsilon$ negligible $\Leftrightarrow \forall c>0.\ \exists k_0.\ \forall k>k_0.\ \epsilon(k)<k^{-c}$, see \cite{bellare-hoang-rogaway-garbling-schemes}). That is, a function $\epsilon(k)$ is negligible if it vanishes faster than any polynomial-inverse.
+
+A typical example for a function that vanishes faster than any polynomial-inverse is $f(k)=2^{-k}$. This is a function that grows inverse-exponentially.
+
+As you can see, we already specified $\epsilon$ as a function of $k$ (which stands for the security parameter). This is because negligibility is a tool that is often applied to e.g. the success probability of an adversary's attack.
+
+\paragraph{Alphabets and strings.}
+
+Let us \emph{informally} introduce alphabets and strings, since they are -- at least at the level of definition -- quite intuitive. We call some set $\Sigma$ of letters an \emph{alphabet}. If we take several letters from this alphabet and concatenate them, we obtain a \emph{string} over the alphabet $\Sigma$. If there's no risk of confusion (which is almost always the case) we omit the phrase ``over the alphabet $\Sigma$'' and just call it ``string''. Moreover, we use no special sign for concatenation, but just write one letter after another.
+
+There is exactly one string consisting of no letters at all (the empty string). By $\Sigma^l$ we denote the set of all strings of length exactly $l$. We define the set of \emph{all} strings over some alphabet $\Sigma$ by
+\begin{equation*}
+\Sigma^*=\Sigma^0\cup\Sigma^1\cup\Sigma^2\cup\Sigma^3\cup\dots=\bigcup_{i=0}^\infty\Sigma^i.
+\end{equation*}
+
+For our needs, we will consider $\Sigma=\left\{ 0,1 \right\}$, which is not a real restriction, because everything can be represented using only bytes (without excessively expanding the
+representation).
+
+We call every subset of $\Sigma^*$ a (formal) \emph{language}.
+
+\paragraph{Probability measures over languages.}
+
+In order to understand the next definition, we have to think about the following random experiment: Take $\Sigma^*$ and pick some string randomly from it. The so-called \emph{probability measure} then ``tells us'' for each string how probable it is to pick exactly this string. That is, it maps each string (and -- by extending it -- every set of strings) to some probability between 0 and 1.
+
+\begin{definition}[Ensemble]
+  We call a family of probability measures $\{{\cal A}_k\}$ on $\Sigma^*$ an \emph{ensemble}, if only strings of length of at most $q(k)$ have positive probability with respect to ${\cal A}_k$, where $q(k)$ is some polynomial in $k$.
+\end{definition}
+
+The notation $\left\{ {\cal A}_k \right\}$ should be understood as the set
+\begin{equation*}
+\left\{ {\cal A}_k \mid {\cal A}_k \text{ is a probability measure on } \Sigma^*, k\in\left\{ 0,1,2,3,\dots, \right\} \right\}.
+\end{equation*}
+
+So, a probability measure in an \emph{ensemble} ``operates'' only on a \emph{finite subset} $S$ of $\Sigma^*$ (since it only ``maps'' strings of length of finite length onto non-negative probabilities), and ``randomly picks'' a string from this finite set $S$ according to its distribution.
+
+\begin{definition}[Indistinguishability]
+  For ${\cal A}$ taken from some ensemble and $C$ a boolean circuit (having sufficiently many inputs), $p_{\cal A}^C$ denotes the probability that $C$ outputs 1 on an input randomly drawn according to the distribution given by ${\cal A}$.
+
+  We say that ensembles $\left\{{\cal A}_k\right\}$ and $\left\{{\cal B}_k\right\}$ are \emph{computationally-indistinguishable} if for any polynomial-size circuit family ${\cal C}=\{C_k\}$, the function $\epsilon(k):=|p_{{\cal A}_k}^{C_k}-p_{{\cal B}_k}^{C_k}|$ is negligible.
+  
+  We call ${\cal A}$ and ${\cal B}$ \emph{statistically indistinguishable} if the function 
+  \begin{equation*}
+\epsilon(k):=\max_{S_k\subseteq \Sigma^*}|\Pr_{{\cal A}_k}[S_k]-\Pr_{{\cal B}_k}[S_k]|
+\end{equation*}
+is negligible, where $\Pr_{{\cal A}}[S]$ denotes the probability that we get a string within $S$ if we draw from $\Sigma^*$ randomly according to the distribution ${\cal A}$.
+\end{definition}
+
+Essentially, if two ensembles ${\cal A}$ and ${\cal B}$ are \emph{computationally} indistinguishable, then no efficient (i.e. no polynomial-time) algorithm can decide whether a sample given to it came from ${\cal A}$ or ${\cal B}$. In other words, any efficient algorithm's behaviour doesn't change significantly when given samples from ${\cal A}$ or ${\cal B}$, respectively. Note that statistical indistinguishability is a stronger property than computational indistinguishability in the sense that statistical indistinguishability implies computational indistinguishability.
+
+For more information on indistinguishability, please refer to e.g. \cite{goldreich_foundations_of_crypto_2}.
+
+For us, indistinguishability is ``just a tool'' that helps us analyzing whether some malicious agent who is attacking our protocol can distinguish the protocols outcome from some sample obtained by some randomized algorithm. We will come to that later in more detail.
+
+\subsection{Model of computation}
+\label{sec:model-of-computation}
+
+We assume a synchronous model. In this setting, the participants can either broadcast a message to everybody or use a private channel with one specified receiver. We imagine this as a network of processors whose computation is controlled by a common clock ticking (at time steps $0,1,2,\dots$). We assume local computation to be ``instantaneous'' compared to the clock ticks, i.e. whenever some participant computes something \emph{locally}, we do not consider the exact running time of this operation, but we just assume that particular computation to take exactly the time between two rounds. Round $i$ starts at tick $i$ and lasts until tick $i+1$.
+
+\paragraph{Communication between participants.}
+
+We assume a read-only common input tape for all participants that contains (among others) the security parameter $k$ (in suitably encoded format). We assign each player a private work tape (read/write), a private read-only input tape and a private write-only output-tape, all of which are initially empty. 
+
+Moreover, we assume that between any two participants $i$ and $j$ there is a private channel $i\rightarrow j$ to securely send messages from $i$ to $j$. This can be seen as a write-only tape for $i$ and a read-only tape for $j$. These private channels are organized in a way such that the receiver can determine who sent the corresponding message.
+
+Last, each player has a broadcast channel (write-only for the sending participant, readable by everybody).
+
+It is convenient to assume that at each time step, there is a well-defined (possibly empty) message on each channel (i.e. in particular on broadcast and private channels).
+
+Additionally, each player has access to a fair coin to support non-determinism.
+
+Player $i$ runs program $P_i$, so that we call the tuple ${\cal P}=(P_1,\dots,P_n)$ a \emph{protocol}. The \emph{history} of player $i$ consists of everything player $i$ had access to (coin tosses, messages sent and received, private and common input).
+
+\paragraph{Round and communication complexity.}
+
+We stated that a protocol proceeds in rounds, and in each round participants might (or might not) communicate with each other. ``In between two rounds'', the participants have the possibility to do local computations. For collaborative function evaluation, the number of rounds together with the amount of communication is the decisive point. That is, when we consider a protocol's complexity, we have to distinguish between \emph{round complexity} (i.e. the number of rounds needed by the protocol) and \emph{communication complexity} (i.e. the amount or length of messages exchanged by the individual participants). Note that the number of rounds is usually the crucial size we try to keep low.
+
+\subsection{Adversaries}
+\label{sec:adversaries-more-detail}
+
+\paragraph{Power of adversaries.}
+
+In particular, we are interested in what happens if not all players are following the protocol. We will have to explain how to proceed if some of the players are corrupted by an adversary (e.g. some malicious agent).
+
+Therefore, we have to define what the participants of our protocol can do (and what they can't), and what a so-called \emph{adversary} might do in order to compromise our privacy or disrupt correctness of our protocol. On the other hand, we -- of course -- need to describe how to tackle such adversaries.
+
+In our case, we assume quite strong adversaries, that can ``infect'' players so that the adversary knows the player's entire ``state'' and controls all future actions of the infected players. 
+
+Moreover, we will consider adversaries that can infect players not only at some statically defined point of the protocol, but can act somewhat \emph{dynamically}. The type of adversary we are considering is called a \emph{uniform} adversary. That means, an adversary $A$ is a probabilistic polynomial-time algorithm. An adversary infects or ``corrupts'' players. We consider adversaries that can do so at the beginning of each new round. Note that such an adversary can -- after he has infected one player -- decide whether to infect another or not.
+
+However, we apply one restriction: The number of players an adversary can corrupt is bounded by some value. We call this value $t$. An adversary is called $t$-adversary if he corrupts at most $t$ players.
+
+After an adversary has infected a participant, it controls the player fully.
+
+Note that we won't consider many distinct adversaries ``within'' one protocol, but we assume only \emph{one} single adversary attacking our protocol. That is no real restriction, since we can interpret several malicious agents as ``belonging'' to one malicious instance only.
+
+\paragraph{What does it mean to defeat an adversary?}
+
+Imagine a black box that computes some function privately and securely and that is resistant against attacks from adversaries. We say that a protocol computes a function securely if it -- under attack by the adversary -- imitates this black box under attack as closely as possible. To formalize this in a mathematical way is a clearly non-trivial issue. We will address this later and see what it means in more detail. For now, we just say that an adversary should not be able to decide whether some information come from a randomized algorithm (a so-called \emph{simulator}), or the information comes from a real protocol that he was trying to compromise.
+
+We assume that the protocol ends as soon as all uncorrupted participants have terminated. Then the adversary terminates, too. At this time the tape of the adversary has some string on its output tape. If we consider the protocol ${\cal P}$, security parameter $k$ and the private inputs $\overrightarrow{x}=(x_1,\dots,x_n)$ as fixed instances, the adversary $A$ defines a probability space $\mathbf{VIEW}_A^k(\overrightarrow{x})$ of adversary outputs. We can interpret the adversary's output as an encoding of its history (that is of coin flips, received and sent messages, etc.).
+
+Moreover, each player has output a certain value. We indicate the output values of the uncompromised players by $\mathbf{OUTPUT}_A^k(\overrightarrow{x})$. When we are interested in a sample from this distribution, we just consider the outputs of non-infected players.
+
+\subsection{Security}
+\label{sec:definitions-security}
+
+As mentioned before, we want that ``the adversary doesn't know whether what it sees comes from the protocol, or from some randomized algorithm (a so-called \emph{simulator})''. That is, we want that the adversary's view can be \emph{approximated} by a simulator. We ask what auxiliary tools this simulator can use to approximate the view. We will consider simulators that have access to a so-called \emph{oracle}:
+
+\begin{definition}[$t$-bounded oracle]
+  A $t$-bounded $(\overrightarrow{x},f)$-oracle is an oracle accepting two kinds of queries:
+  \begin{description}
+  \item[Component query] A component query is an integer $i\in \{1,2,\dots,n\}$. It is only answered if $t$ or fewer component queries were made so far. If this is the case, the oracle distinguishes between the following two cases:
+    \begin{itemize}
+    \item If there has been no output query so far, it is answered by $x_i$.
+    \item If there has been already a proper output query (see below), namely $\overrightarrow{x}'_T$, the query is answered by $(x_i,f_i(\overrightarrow{x}_{\overline{T}}\cup\overrightarrow{x}'_{T}))$.
+    \end{itemize}
+\item[Output query] An output query is a ``tagged vector'' $\overrightarrow{x}'_T$ (see below). It is answered by $f_T(\overrightarrow{x}_{\overline{T}}\cup\overrightarrow{x}'_{T})$ if $T$ consists precisely of the component queries made up to now and if there were not output queries so far. Further or improper output queries stay unanswered.
+  \end{description}
+\end{definition}
+
+The first thing we have to clarify is the meaning of a tagged vector. Consider vectors $\overrightarrow{v}=(v_1,\dots,v_n)$ and $\overrightarrow{w}=(w_1,\dots,w_n)$ and some set $T\subseteq \left\{ 1,2,\dots,n \right\}$. Then, the $T$-tagged vector $\overrightarrow{v}_T$ is defined by $\left\{ (i,v_i) \mid i\in T \right\}$. That is, a tagged vector is a set of pairs each containing an index and an actual element. Please note that if each index is present exactly once in some tagged vector, it can easily be seen as a ``usual'' vector (simply by writing the elements at the specific positions). This means, that (with $\overline{T}=\left\{ 1,2,\dots,n \right\}\setminus T$) we can interpret $\overrightarrow{v}_T\cup \overrightarrow w_{\overline{T}}$ as the vector whose components are taken from $\overrightarrow{v}$ if the component index is contained in $T$, otherwise from $\overrightarrow{w}$.
+
+Note that there might be component queries after an output query, as long as the number of component queries does not exceed $t$.
+
+As you can see, an oracle is parametrized with $t$, $\overrightarrow{x}$ and $f$, i.e. it can be  specifically designed for the function $f$ we are interested in and the corresponding input values (encoded in $\overrightarrow{x}$). Moreover, it essentially allows up to $t$ component queries. Remember that we didn't allow an adversary infecting as many players as he'd like to, but we limited the number of infected players to $t$.
+
+We consider simulators $S$ having access to a $t$-bounded $(\overrightarrow{x},f)$-oracle. We denote the output of simulator $S$ by $\textsc{Output } S^{O_t(\overrightarrow{x},f)}(1^k)$. Note that this -- again -- forms a probability space. That is, fixing $k$, $f$ and $\overrightarrow{x}$, and ``generating'' some random result by applying $S$ with these parameters, we get a value according to some random distribution.
+
+By $\textsc{Queries } S^{O_t(\overrightarrow{x},f)}(1^k)$ we denote a pair containing the following two things:
+
+\begin{itemize}
+\item The indices $i$ for which there was \emph{never} a component query, i.e. it contains the components that were never queried by $S$.
+\item The (single) output query that was made by $S$.
+\end{itemize}
+
+Since $S$ is a simulator (a randomized algorithm), it might randomly and dynamically decide which components to query and \emph{when} to do an output query. Thus, $\textsc{Queries } S^{O_t(\overrightarrow{x},f)}(1^k)$ forms a probability space, as well. 
+
+An element from this probability space is written $(G,\overrightarrow{x}'_{T})$, where $G$ denotes the indices that were \emph{never} queried by $S$ and the $\overrightarrow{x}'_{T}$ is the output query (remember: there can only be \emph{one} output query). As you can see, $G$ may be a proper subset of $\overline{T}$.
+
+You see, we defined several probability spaces for adversaries as well as for simulators. We shall now see why we did so and what we consider ``secure'':
+
+\begin{definition}[Privacy, Correctness]
+  Let $f:(\Sigma^l)^n\rightarrow(\Sigma^l)^n$. A protocol ${\cal P}$ $t$-securely computes $f$ if for all $t$-adversaries $A$ there exists a simulator $S$ (probably using a $t$-bounded oracle) such that the following hold:
+  \begin{description}
+  \item[Privacy] For all $\overrightarrow{x}\in(\Sigma^l)^n$, the $k$-parametrized ensemble $\mathbf{VIEW}_A^k(\overrightarrow{x})$ and the ensemble $\textsc{Output } S^{O_t(\overrightarrow{x},f)}(1^k)$ are computationally indistinguishable.
+  \item[Correctness] For all $\overrightarrow{x}\in(\Sigma^l)^n$, the $k$-parametrized ensembles $\mathbf{OUTPUT}_A^k(\overrightarrow{x})$ and $[(G,\overrightarrow{x}'_T) \leftarrow \textsc{Queries } S^{O_t(\overrightarrow{x},f)}(1^k)\mid f_G(\overrightarrow{x}_{\overline{T}}\cup\overrightarrow{x}'_T)]$ are statistically indistinguishable.
+  \end{description}
+\end{definition}
+
+We see that we require (for privacy) that -- intuitively -- the outcome of an adversary's computation can be \emph{simulated} by some random algorithm (that has access to some oracle). The thought behind is the following: ``If the adversary's computation could have been done by a simulator (not even knowing the protocol), then the adversary's attack couldn't be that useful.''
+
+The above definitions state that for any adversary $A$ there is some simulator $S$ that fulfils the privacy and correctness criteria for this particular adversary. In other words, it is enough if there is (at least) one simulator for each adversary, and different simulators might be used for different adversaries. That is, from the definition, one might tailor the simulator to the specific given adversary.
+
+However, the proof in \cite{Rogaway:1991:RCS:888502} leads to something stronger, namely \emph{one} single simulator that works for \emph{all} adversaries (or at least for all the ones that we allowed).
+
+\subsection{What can we use as a basis}
+\label{sec:building-blocks-for-the-protocol}
+
+Remember that our goal was to derive a protocol that allows us to securely evaluate any given function.
+
+As we will see, we won't construct this protocol ``from scratch'', but we will use other, already established techniques to solve the problem. These are nowadays well-known concepts, that we present here briefly.
+
+\paragraph{Secret sharing.}
+
+If we want to compute a function collaboratively, it is, of course, advantageous if we are able to distribute information across players. As said before, each player will hold some private input (which we call -- for now -- her \emph{secret}).
+
+Therefore, it is useful that a single player can ``split up'' her secret into small pieces that can be distributed among all players. 
+
+The key idea is that this secret is split up in a way such that -- essentially -- none of the players can reconstruct the secret on his own (i.e. from his single part only), and the secret can only be reconstructed if a certain number of players cooperate and reveal their parts of the secret. 
+
+Section \ref{sec:appendix-basic-idea-secret-sharing} in the appendix provides a description of how this works for the interested reader.
+
+We call the player holding the secret the \emph{dealer} and call the distributed parts \emph{shares}.
+
+\paragraph{Verifiable secret sharing.}
+
+We call secret sharing \emph{verifiable} if the dealer is not able to distribute incorrect shares to the other players and even some dishonest players are tolerated. More precisely, it is ensured that even if the dealer is malicious, the other players can later reconstruct some well-defined secret.
+
+We consider a dealer $D$ holding a secret bit $b$ who is engaged in a verifiable secret sharing scheme tolerating up to $t$ faults. After the scheme, each player $i$ holds his own private share $b_i$ of $b$. Then, we require three properties:
+
+\begin{enumerate}
+\item With high probability (i.e. greater than $1-2^{-k}$, where $k$ being the security parameter), there exists a unique value $b'$ such that if the good players broadcast their private shares, each good player will locally compute $b'$ from the broadcast values, regardless of the values broadcast by malicious players.
+\item If $D$ is good, then the computed value $b'$ will be the correct value $b$.
+\item If $D$ is good, then the view of any adversary not corrupting $D$ is independent of $b$. That is, there is some simulator \emph{independent} of $b$ that can simulate the adversary's view.
+\end{enumerate}
+
+If player $D$ splits up his secret $b$ and distributes it, we say that $D$ \emph{commits} to $b$. After $D$ committed to $b$, $b$ is said to be \emph{committed} or a \emph{shared} secret. One important aspect of committing is the following: if a dealer commits to a certain value, then this value is not automatically known publicly (it is just shared). But the dealer cannot change his mind afterwards; that is, once he commits to a value, he is ``bound'' to that value. For more information on this topic, we refer to section \ref{sec:dealer-bound-to-commited-value} or \cite{lecture-notes-goldwasser-bellare}.
+
+Even if we defined verifiable secret sharing for single bits, we can easily extend it to strings, if we simply share each bit of the corresponding string.
+
+For more information on verifiable secret sharing, please refer to e.g. \cite{verifiable-secret-sharing-chor-ben-gold-sha-mic}.
+
+It has been shown that -- in our model of computation -- verifiable secret sharing can be implemented in a constant number of rounds in the presence of a $t$-adversary for $t<n/2$. If you are interested in the proofs of these statements, please consult \cite{rabin-ben-or-verifiable-secret-sharing-number-rounds,beaver-verifiable-secret-sharing}. 
+
+\paragraph{Computing on shared bits.}
+
+As we will later see, circuits are a basic construct when we evaluate a function. It has been proven that a boolean circuit (representing some function) with bounded fan-in and depth $d$ can be evaluated securely and secretly in $O(d)$ rounds involving an amount of communication that is polynomial in $k$ and in the size of the circuit. That is, we can assume that the inputs to the circuit and the result of the evaluation of the circuit are shared bits (and thus not publicly known). If you are interested in the proofs of these statements, please consult \cite{rabin-ben-or-verifiable-secret-sharing-number-rounds,beaver-verifiable-secret-sharing,how-to-play-any-mental-game-goldreich-micali-wigderson}.
+
+The problem with these protocols is that they do not necessarily work in a constant number of rounds. Our protocol will overcome this weakness, but relies -- in some intermediate steps -- on those protocols.
+
+We note some important examples that can be securely and secretly evaluated in a constant number of rounds tolerating less than half of the players being infected by an adversary:
+
+\begin{description}
+\item[Unbounded fan-in XOR.] If one examines the protocols developed in e.g. \cite{completeness-theorems-non-crypto-fault-tolerant,rabin-ben-or-verifiable-secret-sharing-number-rounds}, it can be shown that the output of a XOR-gate operating on any number of bits can be evaluated securely and secretly in a constant number of rounds with polynomial amount of communication.
+\item[Constant-depth circuits] It has been shown by \cite{rabin-ben-or-verifiable-secret-sharing-number-rounds} that any constant-\emph{depth} circuit with bounded fan-in can be securely and secretly evaluated in a constant number of rounds with polynomial amount of communication.
+\end{description}
+
+\paragraph{Collaborative coin flipping.}
+
+Flipping coins collaboratively can be seen as a special case of the previous problem, with some added randomness. It allows a group of players to obtain shared random bits (that then are known to \emph{nobody}!). They can be constructed if each player commits a random bit. Then, the participants could -- if they (or at least some specified subset of them) revealed their shares -- recompute each single bit committed by all the participant. For a brief introduction on how this works, see section \ref{sec:appendix-coin-flipping}.
+
+\paragraph{Proving assertions to the community.}
+
+In our protocol, players will need to assert that some of their local computations were done right. Proving correctness can be done fast, even if the corresponding computation might have involved deep circuits.
+
+Informally, if we have a function $f:\Sigma^a \rightarrow\Sigma^b$ represented by a circuit $C$, and shared input bits $\sigma_1,\dots,\sigma_a$, then a player can commit $f(\sigma_1,\dots,\sigma_a)$ to prove that he computed $f$ on the given bits correctly. This proof information-theoretically reveals nothing and requires $O(1)$ rounds and a polynomial amount of communication (in $|C|$ and $k$).
+
+When the player proves correctness of his computation, she commits (additionally to the function value) some certificate containing the internal values of the wires. 
+
+\paragraph{Pseudorandom generators.}
+
+As we will see later, we will use so-called pseudorandom generators in the protocol. A pseudorandom generator is a \emph{deterministic} algorithm running in polynomial time that takes a ``seed'' (some truly random string) as input and composes a longer, pseudorandom string from it (``stretching''). 
+
+Thus, the following shall hold: the output of a pseudorandom generator cannot be distinguished (using an efficient algorithm) from a truly random source (in the formal definition, we use negligibility to state this).
+
+Note that a pseudorandom generator has the property, that we cannot deduce its input from its output\footnote{Functions that have this property are also called \emph{one-way functions}.}.
+
+Even if it is not known for sure that such generators exist, it has already been proven that they at least exist under very convenient complexity-theoretic assumptions. For more information on this topic see section \ref{sec:appendix-pseudorandom-generators} or \cite{pseudorandom-generators-blum,yao-theory-application-trapdoor-functions}.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "seminar"
+%%% End: 

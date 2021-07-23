@@ -1,0 +1,19 @@
+\section{Outcome}
+\label{sec:correctness-and-security}
+
+As we saw, we could use (verifiable) secret sharing, collaborative evaluation of constant-depth circuits (in particular collaborative XOR), pseudorandom generators as a basis for a new protocol the securely and secretly evaluates a given function. These protocols are known to work in presence of dishonest players, as long as these players are a minority. Furthermore, they work in a constant number of rounds using a polynomial amount of communication. These techniques are then used to collaboratively compute a garbled circuit (with garbled inputs), that is in turn locally evaluated by each player individually.
+
+Note that we didn't exactly specify which technique should be used for these actions. We just ``ensured'' that \emph{there are} techniques that we can use.
+
+That, in turn, simplifies proofs, since \emph{we can assume} that for these building blocks we have come constant-round polynomial-communication protocols. The proof then builds upon these assumptions.
+
+Even if we won't go through the proof, let us briefly restate what we have seen by now: It is possible to collaboratively evaluate a function $f$ on inputs $x_1,\dots,x_n$ such that player $i$ supplies $x_i$ and that all the inputs stay private to the respective players. This is even more surprising if one takes into account that we did \emph{not} bound the size of the circuit in some way.
+
+Proving the above statement requires very sophisticated arguments, which is why we won't do an analysis of the proof. For these reasons, we omitted a more formal in-depth-treatment of the protocol. Inclined readers find a more detailed proof in \cite{Rogaway:1991:RCS:888502}.
+
+But reader beware: the learning curve for understanding these proofs is not small. A variety of definitions, formalizations, lemmata and theorems has to be studied before one can even start to think about the proof. For a relatively up-to-date treatment of garbled circuits that introduces necessary concepts, \cite{bellare-hoang-rogaway-garbling-schemes} might be a good start.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "seminar"
+%%% End: 
